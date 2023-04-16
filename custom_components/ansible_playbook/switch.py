@@ -177,4 +177,4 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         finally:
             # Update state
             self._state = False
-            self.async_schedule_update_ha_state()
+            await self.async_schedule_update_ha_state()
