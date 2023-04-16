@@ -100,6 +100,7 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
 
         # Create a switch entity for the playbook
         switch = AnsiblePlaybookSwitch(
+            hass=hass,
             name=switch_name,
             playbook_path=playbook_path,
             inventory_path=inventory_path,
@@ -124,7 +125,7 @@ def check_location_exists(hass, path: str):
 
 
 class AnsiblePlaybookSwitch(SwitchEntity):
-    def __init__(self, name: str, playbook_path: str, inventory_path: str, extra_vars: dict, vault_password_file: str):
+    def __init__(self, hass, name: str, playbook_path: str, inventory_path: str, extra_vars: dict, vault_password_file: str):
         self._name = name if name is not None else DEFAULT_NAME
         self._playbook_path = playbook_path
         self._inventory_path = inventory_path
@@ -133,7 +134,7 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         self._state = False
         self._host_count = 0
         self._step_count = 0
-        self._callback = AnsiblePlaybookCallback(self)
+        self._callback = AnsiblePlaybookCallback(hass, self)
 
     @property
     def name(self) -> str:
