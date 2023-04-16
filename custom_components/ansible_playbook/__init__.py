@@ -21,7 +21,6 @@ DOMAIN = CONST_DOMAIN
 
 # Home Assistant will call this method automatically when setting up the platform.
 # It creates the switch entities and returns True if everything was set up correctly.
-
 def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_info=None):
     """Set up the Ansible playbook switch platform."""
 
@@ -47,11 +46,11 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
         extra_vars = playbook.get(CONF_EXTRA_VARS)
         vault_password_file = playbook.get(CONF_VAULT_PASSWORD_FILE)
 
-        if not check_location_exists(hass, playbook_path) or not check_location_exists(hass, inventory_path):
-            return False
+        #if not check_location_exists(hass, playbook_path) or not check_location_exists(hass, inventory_path):
+        #    return False
         
-        if vault_password_file is not None and not check_location_exists(hass, vault_password_file):
-            return False
+        #if vault_password_file is not None and not check_location_exists(hass, vault_password_file):
+        #    return False
 
         # Create a switch entity for the playbook
         switch = AnsiblePlaybookSwitch(
