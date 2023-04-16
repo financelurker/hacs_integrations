@@ -141,7 +141,7 @@ class AnsiblePlaybookSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         _LOGGER.warn("ansible_playbook switch turned on")
-        self._run_playbook()
+        await self._run_playbook()
         self._state = True
         self.schedule_update_ha_state()
 
