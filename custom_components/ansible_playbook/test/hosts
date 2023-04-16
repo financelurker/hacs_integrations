@@ -1,13 +1,8 @@
 all:
   children:
-    macBooks:
+    groupA:
       hosts:
-        executiveBook:
+        myComputer:
           ansible_host: 192.168.1.35
-          ansible_user: ronald
-          hostname: executiveBook
-#    iMacs:
-#      hosts:
-#        executiveMac:
-#          ansible_host: 192.168.1.34
-#          ansible_user: ronaldheggenberger
+          ansible_user: username
+          hostname: myComputer
