@@ -24,7 +24,7 @@ DOMAIN = CONST_DOMAIN
 def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_info=None):
     """Set up the Ansible playbook switch platform."""
 
-    _LOGGER.info("Setting up ansible_playbook integration")
+    _LOGGER.warn("Setting up ansible_playbook integration")
 
     # Validate the configuration for the platform
     if not config.get(CONF_PLAYBOOKS):
