@@ -74,5 +74,5 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
 
 def check_location_exists(hass, path: str):
     hass_config_location = hass.config.path()
-    absolute_path = os.path.join(hass_config_location, "ansible_runner", path)
+    absolute_path = os.path.join(hass_config_location, DOMAIN, path)
     return os.path.exists(absolute_path)
