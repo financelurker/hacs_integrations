@@ -33,6 +33,7 @@ from .const import (
     CONF_PLAYBOOK_PATH,
     CONF_INVENTORY_PATH,
     CONF_SWITCH_NAME,
+    CONF_SWITCH_ID,
     CONF_VAULT_PASSWORD_FILE,
     CONF_EXTRA_VARS,
     ATTR_HOSTS_COUNT,
@@ -49,6 +50,7 @@ DEFAULT_NAME = "Ansible Playbook Switch"
 PLAYBOOK_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_PLAYBOOK_PATH): str,
+        vol.Optional(CONF_SWITCH_ID): str,
         vol.Optional(CONF_SWITCH_NAME): str,
         vol.Optional(CONF_INVENTORY_PATH): str,
         vol.Optional(CONF_EXTRA_VARS): dict,
@@ -87,6 +89,7 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
     for playbook in playbooks:
         # Get the path to the Ansible playbook
         switch_name = playbook.get(CONF_SWITCH_NAME)
+        switch_id = playbook.get(CONF_SWITCH_ID)
         playbook_path = playbook.get(CONF_PLAYBOOK_PATH)
         inventory_path = playbook.get(CONF_INVENTORY_PATH)
         extra_vars = playbook.get(CONF_EXTRA_VARS)
@@ -102,6 +105,7 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
         switch = AnsiblePlaybookSwitch(
             hass=hass,
             name=switch_name,
+            switch_id=switch_id,
             playbook_path=playbook_path,
             inventory_path=inventory_path,
             extra_vars=extra_vars,
@@ -125,9 +129,10 @@ def check_location_exists(hass, path: str):
 
 
 class AnsiblePlaybookSwitch(SwitchEntity):
-    def __init__(self, hass, name: str, playbook_path: str, inventory_path: str, extra_vars: dict, vault_password_file: str):
+    def __init__(self, hass, name: str, switch_id: str, playbook_path: str, inventory_path: str, extra_vars: dict, vault_password_file: str):
         self._name = name if name is not None else DEFAULT_NAME
         self._playbook_path = playbook_path
+        self._unique_id = "ansible_playbook_" + switch_id if switch_id is not None else "ansible_playbook_dummy"
         self._inventory_path = inventory_path
         self._extra_vars = extra_vars
         self._vault_password_file = vault_password_file
@@ -139,7 +144,11 @@ class AnsiblePlaybookSwitch(SwitchEntity):
     @property
     def name(self) -> str:
         return self._name
-    
+
+    @property
+    def unique_id(self):
+        return self._unique_id
+
     @property
     def is_on(self) -> bool:
         """Return true if the switch is currently turned on."""
