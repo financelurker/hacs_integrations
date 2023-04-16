@@ -11,8 +11,11 @@ from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.vars.manager import VariableManager
 from ansible_runner import Runner
+from ansible.playbook import Playbook
+import ansible_runner
 
 import time
+from .runner import async_execute_playbook, execute_test_playbook
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 import voluptuous as vol
@@ -29,14 +32,17 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN as CONST_DOMAIN
 from .const import (
     CONF_PLAYBOOKS,
-    CONF_PLAYBOOK_PATH,
-    CONF_INVENTORY_PATH,
+    CONF_PLAYBOOK_DIRECTORY,
+    CONF_PLAYBOOK_FILE,
     CONF_SWITCH_NAME,
     CONF_SWITCH_ID,
     CONF_VAULT_PASSWORD_FILE,
     CONF_EXTRA_VARS,
-    ATTR_HOSTS_COUNT,
-    ATTR_STEPS_COUNT,
+    ATTR_OK_COUNT,
+    ATTR_FAILURE_COUNT,
+    ATTR_CHANGED_COUNT,
+    ATTR_SKIPPED_COUNT,
+    ATTR_IGNORED_COUNT,
     ATTR_PLAYBOOK,
 )
 
@@ -48,10 +54,10 @@ DEFAULT_NAME = "Ansible Playbook Switch"
 
 PLAYBOOK_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_PLAYBOOK_PATH): str,
-        vol.Optional(CONF_SWITCH_ID): str,
-        vol.Optional(CONF_SWITCH_NAME): str,
-        vol.Optional(CONF_INVENTORY_PATH): str,
+        vol.Required(CONF_PLAYBOOK_DIRECTORY): str,
+        vol.Required(CONF_PLAYBOOK_FILE): str,
+        vol.Required(CONF_SWITCH_ID): str,
+        vol.Required(CONF_SWITCH_NAME): str,
         vol.Optional(CONF_EXTRA_VARS): dict,
         vol.Optional(CONF_VAULT_PASSWORD_FILE): str,
     }
@@ -68,7 +74,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 # Home Assistant will call this method automatically when setting up the platform.
 # It creates the switch entities and returns True if everything was set up correctly.
-def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entities, discovery_info=None):
     """Set up the Ansible playbook switch platform."""
 
     _LOGGER.warn("Setting up ansible_playbook integration")
@@ -86,27 +92,20 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
 
     # Loop through the list of playbooks and create a switch entity for each one
     for playbook in playbooks:
-        # Get the path to the Ansible playbook
         switch_name = playbook.get(CONF_SWITCH_NAME)
         switch_id = playbook.get(CONF_SWITCH_ID)
-        playbook_path = playbook.get(CONF_PLAYBOOK_PATH)
-        inventory_path = playbook.get(CONF_INVENTORY_PATH)
+        playbook_directory = playbook.get(CONF_PLAYBOOK_DIRECTORY)
+        playbook_file = playbook.get(CONF_PLAYBOOK_FILE)
         extra_vars = playbook.get(CONF_EXTRA_VARS)
         vault_password_file = playbook.get(CONF_VAULT_PASSWORD_FILE)
-
-        #if not check_location_exists(hass, playbook_path) or not check_location_exists(hass, inventory_path):
-        #    return False
-        
-        #if vault_password_file is not None and not check_location_exists(hass, vault_password_file):
-        #    return False
 
         # Create a switch entity for the playbook
         switch = AnsiblePlaybookSwitch(
             hass=hass,
             name=switch_name,
             switch_id=switch_id,
-            playbook_path=playbook_path,
-            inventory_path=inventory_path,
+            private_data_dir=playbook_directory,
+            playbook_file=playbook_file,
             extra_vars=extra_vars,
             vault_password_file=vault_password_file
         )
@@ -115,7 +114,7 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
         switches.append(switch)
 
     # Add the switch entities to Home Assistant
-    add_entities(switches)
+    async_add_entities(switches)
 
     # Return True to indicate that the platform was successfully set up
     return True
@@ -131,17 +130,14 @@ def get_absolute_path(hass_config_location: str, path: str) -> str:
     return os.path.join(hass_config_location, DOMAIN, path)
 
 class AnsiblePlaybookSwitch(SwitchEntity):
-    def __init__(self, hass, name: str, switch_id: str, playbook_path: str, inventory_path: str, extra_vars: dict, vault_password_file: str, initial_state=False):
+    def __init__(self, hass, name: str, switch_id: str, private_data_dir: str, playbook_file: str, extra_vars: dict, vault_password_file: str, initial_state=False):
         self._name = name if name is not None else DEFAULT_NAME
-        self._playbook_path = playbook_path
-        self._unique_id = "ansible_playbook_" + switch_id if switch_id is not None else "ansible_playbook_dummy"
-        self._inventory_path = inventory_path
+        self._private_data_dir = private_data_dir
+        self._playbook_file = playbook_file
+        self._unique_id = "ansible_playbook_" + switch_id
         self._extra_vars = extra_vars
         self._vault_password_file = vault_password_file
         self._state = initial_state
-        self._host_count = 0
-        self._step_count = 0
-        self._callback = AnsiblePlaybookCallback(hass, self)
         self.hass = hass
 
     @property
@@ -159,153 +155,35 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         self._state = _is_on
         return _is_on
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         self._run_playbook()
         self._state = True
         self.schedule_update_ha_state()
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         # self._state = False
         self.schedule_update_ha_state()
-    
+
     @property
-    def hosts_count(self):
-        return self._host_count
-    
+    def playbook_directory(self) -> str:
+        return self._private_data_dir
+
     @property
-    def steps_count(self):
-        return self._step_count
-    
-    @property
-    def playbook_path(self) -> str:
-        return self._playbook_path
-    
-    @property
-    def inventory_path(self) -> str | None:
-        return self._inventory_path
+    def playbook_file(self) -> str:
+        return self._playbook_file
     
     @property
     def vault_password_file(self) -> str | None:
         return self._vault_password_file
 
-    @property
-    def device_state_attributes(self) -> dict:
-        return {
-            ATTR_HOSTS_COUNT: self._host_count,
-            ATTR_STEPS_COUNT: self._step_count,
-            ATTR_PLAYBOOK: self._playbook_path,
-        }
-
-    def _run_playbook(self) -> None:
-        # Set up callback
-        results_callback = PlaybookResultCallback()
-        results_callback.playbook_path = self._playbook_path
-
-        runner = Runner(
-            playbook=get_absolute_path(self.hass.config.path(), self._playbook_path),
-            inventory=get_absolute_path(self.hass.config.path(), self._inventory_path) if self._inventory_path is not None else None,
-            vault_password_files=self._vault_password_file,
-            extravars=self._extra_vars if self._extra_vars is not None else {},
-            callbacks=[results_callback, self._callback],
-         )
-
+    async def _run_playbook(self) -> None:
         # Run playbook
-        self._callback._state = "starting"
-        runner.run()
+        runner_stats = await async_execute_playbook(
+            private_data_dir=get_absolute_path(self.hass.config.path(), self._private_data_dir),
+            playbook=self._playbook_file,
+            vault_password_file=self._vault_password_file,
+        )
 
         # Update state
-        self._host_count = results_callback.host_count
-        self._step_count = results_callback.step_count
+        self._state = False
         self.schedule_update_ha_state()
-
-
-class PlaybookResultCallback(CallbackBase):
-    def __init__(self):
-        super().__init__()
-        self._host_count = 0
-        self._step_count = 0
-        self._start_time = datetime.now()
-
-    @property
-    def host_count(self) -> int:
-        return self._host_count
-
-    @property
-    def step_count(self) -> int:
-        return self._step_count
-
-    def v2_playbook_on_start(self, playbook: Play) -> None:
-        self._host_count = len(playbook.get_variable_manager().get_hosts())
-
-    def v2_runner_on_ok(self, result):
-        self._step_count += 1
-
-    def v2_runner_on_failed(self, result, ignore_errors=False):
-        self._step_count += 1
-
-    def v2_runner_on_skipped(self, result):
-        self._step_count += 1
-
-    def v2_playbook_on_stats(self, stats):
-        self._step_count = stats.processed
-
-        end_time = datetime.now()
-        elapsed_time = end_time - self._start_time
-
-        results = {
-            ATTR_HOSTS_COUNT: self._host_count,
-            ATTR_STEPS_COUNT: self._step_count,
-            "elapsed_time": str(elapsed_time),
-        }
-
-        _LOGGER.info(json.dumps(results))
-
-
-class AnsiblePlaybookCallback(CallbackBase):
-    """A callback class that updates the state of the switch."""
-
-    def __init__(self, hass, switch):
-        super(AnsiblePlaybookCallback, self).__init__()
-        self.hass = hass
-        self.switch = switch
-        self._state = "idle"
-
-    def _update_switch_state(self, new_state):
-        self._state = new_state
-        async_dispatcher_send(self.hass, self.switch.entity_id)
-
-    def v2_playbook_on_start(self, playbook):
-        """Called when the playbook starts."""
-        self._update_switch_state("starting")
-
-    def v2_playbook_on_task_start(self, task, is_conditional):
-        """Called when a task starts."""
-        self._update_switch_state("running")
-
-    def v2_playbook_on_stats(self, stats):
-        """Called when the playbook completes."""
-        self._update_switch_state("finished")
-
-    def v2_playbook_on_no_hosts_matched(self):
-        """Called when no hosts matched the pattern."""
-        self._update_switch_state("failed")
-
-    def v2_playbook_on_play_start(self, play):
-        """Called when a play starts."""
-        self._update_switch_state("running")
-
-    def v2_playbook_on_handler_task_start(self, task):
-        """Called when a handler task starts."""
-        self._update_switch_state("running")
-
-    def v2_playbook_on_include(self, included_file):
-        """Called when an include file is encountered."""
-        self._update_switch_state("running")
-
-    def v2_playbook_on_import_for_host(self, result, included_file):
-        """Called when an import file is encountered."""
-        self._update_switch_state("running")
-
-    def v2_playbook_on_not_import_for_host(self, result, missing_file):
-        """Called when an import file is missing."""
-        self._update_switch_state("failed")

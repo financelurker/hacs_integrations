@@ -1,0 +1,14 @@
+---
+- name: Example playbook
+  hosts: all
+
+  vars_files:
+    - secret
+
+  gather_facts: no
+  
+  tasks:
+    - name: Example task
+#      delegate_to: 127.0.0.1
+      debug:
+        msg: "{{ test_string }}"
