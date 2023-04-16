@@ -141,25 +141,13 @@ class AnsiblePlaybookSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         _LOGGER.warn("ansible_playbook switch turned on")
-        await self._run_playbook()
         self._state = True
         self.async_schedule_update_ha_state()
+        await self._run_playbook()
 
     async def async_turn_off(self, **kwargs) -> None:
         # self._state = False
         self.async_schedule_update_ha_state()
-
-    @property
-    def playbook_directory(self) -> str:
-        return self._private_data_dir
-
-    @property
-    def playbook_file(self) -> str:
-        return self._playbook_file
-    
-    @property
-    def vault_password_file(self) -> str | None:
-        return self._vault_password_file
 
     async def _run_playbook(self) -> None:
         # Run playbook
@@ -177,4 +165,4 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         finally:
             # Update state
             self._state = False
-            await self.async_schedule_update_ha_state()
+            self.async_schedule_update_ha_state()
