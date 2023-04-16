@@ -143,11 +143,11 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         _LOGGER.warn("ansible_playbook switch turned on")
         await self._run_playbook()
         self._state = True
-        self.schedule_update_ha_state()
+        self.async_schedule_update_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
         # self._state = False
-        self.schedule_update_ha_state()
+        self.async_schedule_update_ha_state()
 
     @property
     def playbook_directory(self) -> str:
@@ -177,4 +177,4 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         finally:
             # Update state
             self._state = False
-            self.schedule_update_ha_state()
+            self.async_schedule_update_ha_state()
