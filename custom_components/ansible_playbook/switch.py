@@ -160,6 +160,8 @@ class AnsiblePlaybookSwitch(SwitchEntity):
                 vault_password_file=self._vault_password_file,
             )
             _LOGGER.warn("async_execute_playbook finished")
+            _LOGGER.warn("Runner stdout:\n" + runner_stats.stdout.read())
+            _LOGGER.error("Runner stderr:\n" + runner_stats.stderr.read())
         except Exception as e:
             _LOGGER.error("async_execute_playbook error", e)
         finally:

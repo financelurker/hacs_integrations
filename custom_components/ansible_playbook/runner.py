@@ -15,7 +15,7 @@ def finished_callback(runner: Runner):
     runner_status = runner.status
 
 
-async def async_execute_playbook(private_data_dir: str, playbook: str, vault_password_file: str | None) -> dict:
+async def async_execute_playbook(private_data_dir: str, playbook: str, vault_password_file: str | None) -> Runner:
     return execute_playbook(
         private_data_dir=private_data_dir,
         playbook=playbook,
@@ -23,7 +23,10 @@ async def async_execute_playbook(private_data_dir: str, playbook: str, vault_pas
     )
 
 
-def execute_playbook(private_data_dir: str, playbook: str, vault_password_file: str | None) -> dict:
+def execute_playbook(private_data_dir: str, playbook: str, vault_password_file: str | None) -> Runner:
+    global runner_status
+    runner_status = None
+
     _LOGGER.warn(threading.current_thread().name + " - Starting ansible_runner.run_async")
     (thread, runner) = ansible_runner.run_async(
         private_data_dir=private_data_dir,
@@ -37,7 +40,7 @@ def execute_playbook(private_data_dir: str, playbook: str, vault_password_file: 
     # print(threading.current_thread().name + " - Finished ansible_runner.run_async - Status was: " + runner_status)
     # print()
     # pprint.pprint(runner.stats)
-    return runner.stats
+    return runner
 
 
 if __name__ == "__main__":
