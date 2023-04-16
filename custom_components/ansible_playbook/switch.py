@@ -1,21 +1,7 @@
 import logging
 import os
-import json
-from datetime import datetime
-from typing import List
 
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from ansible.playbook.play import Play
-from ansible.plugins.callback import CallbackBase
-from ansible.plugins.loader import callback_loader
-from ansible.vars.manager import VariableManager
-from ansible_runner import Runner
-from ansible.playbook import Playbook
-import ansible_runner
-
-import time
-from .runner import async_execute_playbook, execute_test_playbook
+from .runner import async_execute_playbook
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 import voluptuous as vol
