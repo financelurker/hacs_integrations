@@ -41,4 +41,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 * This project was inspired by the Home Assistant demo switch platform.
 * The Ansible Playbook Switch uses the Ansible Python API to execute playbooks.
-* This custom component was created with the help of [ChatGPT](https://github.com/chatgpt), a language model trained by OpenAI. ChatGPT provided guidance on how to use the Ansible Python API to create a Home Assistant component that can run Ansible playbooks and report results back to the switches' attributes.
