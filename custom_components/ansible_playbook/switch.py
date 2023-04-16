@@ -165,13 +165,16 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         # Run playbook
         _LOGGER.warn("invoking async_execute_playbook")
 
-        runner_stats = await async_execute_playbook(
-            private_data_dir=get_absolute_path(self.hass.config.path(), self._private_data_dir),
-            playbook=self._playbook_file,
-            vault_password_file=self._vault_password_file,
-        )
-        _LOGGER.warn("async_execute_playbook finished")
-
-        # Update state
-        self._state = False
-        self.schedule_update_ha_state()
+        try:
+            runner_stats = await async_execute_playbook(
+                private_data_dir=get_absolute_path(self.hass.config.path(), self._private_data_dir),
+                playbook=self._playbook_file,
+                vault_password_file=self._vault_password_file,
+            )
+            _LOGGER.warn("async_execute_playbook finished")
+        except Exception as e:
+            _LOGGER.error("async_execute_playbook error", e)
+        finally:
+            # Update state
+            self._state = False
+            self.schedule_update_ha_state()
