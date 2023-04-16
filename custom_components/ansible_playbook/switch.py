@@ -12,6 +12,7 @@ from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.vars.manager import VariableManager
 from ansible.executor.playbook_executor import PlaybookExecutor
+from ansible.module_utils.common.collections import ImmutableDict
 
 import time
 import homeassistant.helpers.config_validation as cv
@@ -204,10 +205,12 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         results_callback = PlaybookResultCallback()
         results_callback.playbook_path = self._playbook_path
 
-        options = {
-            'extra_vars': self._extra_vars,
-            'vault_password_file': self._vault_password_file
-        }
+        #options = {
+        #    'extra_vars': self._extra_vars,
+        #    'vault_password_file': self._vault_password_file
+        #}
+
+        context.CLIARGS = ImmutableDict(vault_password_file=self._vault_password_file)
 
         # Set up playbook
         playbook = PlaybookExecutor(
@@ -216,7 +219,7 @@ class AnsiblePlaybookSwitch(SwitchEntity):
             variable_manager=variable_manager,
             loader=loader,
             passwords={},
-            options=options,
+        #    options=options,
             callbacks=[results_callback],
             stdout_callback=self._callback,
         )
