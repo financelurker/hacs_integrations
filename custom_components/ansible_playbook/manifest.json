@@ -4,7 +4,7 @@
     "documentation": "https://github.com/financelurker/ha_ansible_playbook/blob/main/README.md",
     "dependencies": [],
     "codeowners": [ "@financelurker" ],
-    "requirements": ["ansible>=2.9.0", "pexpect>=4.8.0"],
+    "requirements": ["ansible>=2.9.0", "pexpect>=4.8.0", "ansible-runner>=2.3.2"],
     "iot_class": "Local",
     "config_flow": false,
     "version": "1.0.0",
