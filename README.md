@@ -1,1 +1,1 @@
-# hacs_integrations
+# HACS Integrations

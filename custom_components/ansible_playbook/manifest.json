@@ -1,0 +1,24 @@
+{
+    "domain": "ansible_playbook",
+    "name": "Ansible Playbook",
+    "documentation": "https://github.com/financelurker/ha_ansible_playbook/blob/main/README.md",
+    "dependencies": [],
+    "codeowners": [ "@financelurker" ],
+    "requirements": ["ansible>=2.9.0", "pexpect>=4.8.0"],
+    "iot_class": "Local",
+    "config_flow": false,
+    "version": "1.0.0",
+    "custom_components": [
+      {
+        "name": "switch",
+        "description": "Control Ansible Playbook execution",
+        "version": "1.0.0",
+        "requirements": [],
+        "files": ["__init__.py", "switch.py", "const.py"],
+        "dependencies": [],
+        "iot_class": "Local",
+        "documentation": "https://github.com/financelurker/ha_ansible_playbook/blob/main/README.md"
+      }
+    ]
+  }
+  
