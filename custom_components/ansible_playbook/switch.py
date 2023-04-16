@@ -137,9 +137,7 @@ class AnsiblePlaybookSwitch(SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return true if the switch is currently turned on."""
-        _is_on = self._callback._state in ["running", "starting", "waiting"]
-        self._state = _is_on
-        return _is_on
+        return self._state
 
     async def async_turn_on(self, **kwargs) -> None:
         self._run_playbook()
