@@ -10,7 +10,7 @@ from ansible.playbook.play import Play
 from ansible.plugins.callback import CallbackBase
 from ansible.plugins.loader import callback_loader
 from ansible.vars.manager import VariableManager
-from ansible_runner.runner import PlaybookExecutor
+from ansible_runner import Runner
 
 import time
 import homeassistant.helpers.config_validation as cv
@@ -123,22 +123,26 @@ def setup_platform(hass: core.HomeAssistant, config, add_entities, discovery_inf
 
 def check_location_exists(hass, path: str):
     hass_config_location = hass.config.path()
-    absolute_path = os.path.join(hass_config_location, DOMAIN, path)
+    absolute_path = get_absolute_path(hass_config_location, path)
     return os.path.exists(absolute_path)
 
 
+def get_absolute_path(hass_config_location: str, path: str) -> str:
+    return os.path.join(hass_config_location, DOMAIN, path)
+
 class AnsiblePlaybookSwitch(SwitchEntity):
-    def __init__(self, hass, name: str, switch_id: str, playbook_path: str, inventory_path: str, extra_vars: dict, vault_password_file: str):
+    def __init__(self, hass, name: str, switch_id: str, playbook_path: str, inventory_path: str, extra_vars: dict, vault_password_file: str, initial_state=False):
         self._name = name if name is not None else DEFAULT_NAME
         self._playbook_path = playbook_path
         self._unique_id = "ansible_playbook_" + switch_id if switch_id is not None else "ansible_playbook_dummy"
         self._inventory_path = inventory_path
         self._extra_vars = extra_vars
         self._vault_password_file = vault_password_file
-        self._state = False
+        self._state = initial_state
         self._host_count = 0
         self._step_count = 0
         self._callback = AnsiblePlaybookCallback(hass, self)
+        self.hass = hass
 
     @property
     def name(self) -> str:
@@ -193,36 +197,21 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         }
 
     def _run_playbook(self) -> None:
-        # Load inventory and variables
-        loader = DataLoader()
-        inventory = InventoryManager(
-            loader=loader, sources=self._inventory_path)
-        variable_manager = VariableManager(loader=loader, inventory=inventory)
-
         # Set up callback
         results_callback = PlaybookResultCallback()
         results_callback.playbook_path = self._playbook_path
 
-        options = {
-            'extra_vars': self._extra_vars,
-            'vault_password_file': self._vault_password_file
-        }
-
-        # Set up playbook
-        playbook = PlaybookExecutor(
-            playbooks=[self._playbook_path],
-            inventory=inventory,
-            variable_manager=variable_manager,
-            loader=loader,
-            passwords={},
-            options=options,
-            callbacks=[results_callback],
-            stdout_callback=self._callback,
-        )
+        runner = Runner(
+            playbook=get_absolute_path(self.hass.config.path(), self._playbook_path),
+            inventory=get_absolute_path(self.hass.config.path(), self._inventory_path) if self._inventory_path is not None else None,
+            vault_password_files=self._vault_password_file,
+            extravars=self._extra_vars if self._extra_vars is not None else {},
+            callbacks=[results_callback, self._callback],
+         )
 
         # Run playbook
         self._callback._state = "starting"
-        playbook.run()
+        runner.run()
 
         # Update state
         self._host_count = results_callback.host_count
