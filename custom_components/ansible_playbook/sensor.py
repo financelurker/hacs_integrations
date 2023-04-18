@@ -64,7 +64,8 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
                 self._should_poll = True
         elif task_state == AnsibleTaskState.NOT_RUNNING:
             if self._state == True:
-                collect_result(self._button_unique_id)
+                result = collect_result(self._button_unique_id)
+                _LOGGER.warn(result)
                 self._state = False
                 self._should_poll = False
         await self.async_write_ha_state()        
