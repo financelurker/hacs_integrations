@@ -20,8 +20,8 @@ from .const import (
     CONF_PLAYBOOKS,
     CONF_PLAYBOOK_DIRECTORY,
     CONF_PLAYBOOK_FILE,
-    CONF_SWITCH_NAME,
-    CONF_SWITCH_ID,
+    CONF_BUTTON_NAME,
+    CONF_BUTTON_ID,
     CONF_VAULT_PASSWORD_FILE,
     CONF_EXTRA_VARS,
     ATTR_OK_COUNT,
@@ -36,14 +36,14 @@ _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = CONST_DOMAIN
 
-DEFAULT_NAME = "Ansible Playbook Switch"
+DEFAULT_NAME = "Ansible Playbook Button"
 
 PLAYBOOK_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_PLAYBOOK_DIRECTORY): str,
         vol.Required(CONF_PLAYBOOK_FILE): str,
-        vol.Required(CONF_SWITCH_ID): str,
-        vol.Required(CONF_SWITCH_NAME): str,
+        vol.Required(CONF_BUTTON_ID): str,
+        vol.Required(CONF_BUTTON_NAME): str,
         vol.Optional(CONF_EXTRA_VARS): dict,
         vol.Optional(CONF_VAULT_PASSWORD_FILE): str,
     }
@@ -59,9 +59,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 
 # Home Assistant will call this method automatically when setting up the platform.
-# It creates the switch entities and returns True if everything was set up correctly.
+# It creates the button entities and returns True if everything was set up correctly.
 async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entities, discovery_info=None):
-    """Set up the Ansible playbook switch platform."""
+    """Set up the Ansible playbook button platform."""
 
     _LOGGER.warn("Setting up ansible_playbook integration")
 
@@ -73,33 +73,33 @@ async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entit
     # Get the list of Ansible playbooks
     playbooks = config.get(CONF_PLAYBOOKS)
 
-    # Create a list to store the switch entities
+    # Create a list to store the button entities
     buttons = []
 
-    # Loop through the list of playbooks and create a switch entity for each one
+    # Loop through the list of playbooks and create a button entity for each one
     for playbook in playbooks:
-        switch_name = playbook.get(CONF_SWITCH_NAME)
-        switch_id = playbook.get(CONF_SWITCH_ID)
+        button_name = playbook.get(CONF_BUTTON_NAME)
+        button_id = playbook.get(CONF_BUTTON_ID)
         playbook_directory = playbook.get(CONF_PLAYBOOK_DIRECTORY)
         playbook_file = playbook.get(CONF_PLAYBOOK_FILE)
         extra_vars = playbook.get(CONF_EXTRA_VARS)
         vault_password_file = playbook.get(CONF_VAULT_PASSWORD_FILE)
 
-        # Create a switch entity for the playbook
-        switch = AnsiblePlaybookButton(
+        # Create a button entity for the playbook
+        button = AnsiblePlaybookButton(
             hass=hass,
-            name=switch_name,
-            switch_id=switch_id,
+            name=button_name,
+            button_id=button_id,
             private_data_dir=playbook_directory,
             playbook_file=playbook_file,
             extra_vars=extra_vars,
             vault_password_file=vault_password_file
         )
 
-        # Add the switch entity to the list of switches
-        buttons.append(switch)
+        # Add the button entity to the list of buttons
+        buttons.append(button)
 
-    # Add the switch entities to Home Assistant
+    # Add the button entities to Home Assistant
     async_add_entities(buttons)
 
     # Return True to indicate that the platform was successfully set up
@@ -116,11 +116,11 @@ def get_absolute_path(hass_config_location: str, path: str) -> str:
     return os.path.join(hass_config_location, DOMAIN, path)
 
 class AnsiblePlaybookButton(ButtonEntity):
-    def __init__(self, hass, name: str, switch_id: str, private_data_dir: str, playbook_file: str, extra_vars: dict, vault_password_file: str, initial_state=False):
+    def __init__(self, hass, name: str, button_id: str, private_data_dir: str, playbook_file: str, extra_vars: dict, vault_password_file: str, initial_state=False):
         self._name = name if name is not None else DEFAULT_NAME
         self._private_data_dir = private_data_dir
         self._playbook_file = playbook_file
-        self._unique_id = "ansible_playbook_" + switch_id
+        self._unique_id = "ansible_playbook_" + button_id
         self._extra_vars = extra_vars
         self._vault_password_file = vault_password_file
         self._state = initial_state
@@ -139,8 +139,8 @@ class AnsiblePlaybookButton(ButtonEntity):
         return self._unique_id
 
     @property
-    def is_on(self) -> bool:
-        """Return true if the switch is currently turned on."""
+    def is_pressed(self) -> bool:
+        """Return true if the button is currently turned activated."""
         return self._state
 
     async def async_press(self, **kwargs) -> None:
