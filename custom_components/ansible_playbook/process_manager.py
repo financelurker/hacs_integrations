@@ -69,7 +69,7 @@ class AnsiblePlaybookResult(dict):
 
 
 class AnsiblePlaybookExecution(dict):
-    def __init__(self, entity_id: str, base_dir: str, playbook_file: str, vault_password_file: str, callback: callable):
+    def __init__(self, entity_id: str, base_dir: str, playbook_file: str, vault_password_file: str):
         super()
         self._base_dir = base_dir
         self._playbook_file = playbook_file
@@ -77,8 +77,8 @@ class AnsiblePlaybookExecution(dict):
         self._running = False
         self._parent_pipe: Connection = None
         self._result_data: dict = None
-        self._callback = callback
         self._entity_id = entity_id
+        self._last_result = None
     
     def is_running(self) -> bool:
         if self._running:
@@ -95,8 +95,12 @@ class AnsiblePlaybookExecution(dict):
         self._parent_pipe.close()
         self._parent_pipe = None
         self._running = False
-        ansiblePlaybookResult = transformStatsToPlaybookResult(data)
-        self._callback(ansiblePlaybookResult)
+        self._last_result = transformStatsToPlaybookResult(data)
+    
+    def collect_last_result(self) -> AnsiblePlaybookResult | None:
+        last_result = self._last_result
+        self._last_result = None
+        return last_result
     
     def run(self) -> None:
         child_conn: Connection = None
@@ -133,9 +137,9 @@ class AnsibleProcessManager:
     def __init__(self):
         self._sub_processes = {}
 
-    def run_task(self, entity_id: str, base_dir: str, playbook_file: str, vault_password_file: str, callback: callable):
+    def run_task(self, entity_id: str, base_dir: str, playbook_file: str, vault_password_file: str) -> None:
         if self._sub_processes.get(entity_id) is None:
-            task = AnsiblePlaybookExecution(entity_id=entity_id, base_dir=base_dir, playbook_file=playbook_file, vault_password_file=vault_password_file, callback=callback)
+            task = AnsiblePlaybookExecution(entity_id=entity_id, base_dir=base_dir, playbook_file=playbook_file, vault_password_file=vault_password_file)
             self._sub_processes[entity_id] = task
             task.run()
         else:
@@ -149,6 +153,12 @@ class AnsibleProcessManager:
             return AnsibleTaskState.NOT_RUNNING
         else:
             return AnsibleTaskState.RUNNING if self._sub_processes[entity_id].is_running() else AnsibleTaskState.NOT_RUNNING
+    
+    def collect_result(self, entity_id: str) -> AnsiblePlaybookResult | None:
+        if self._sub_processes.get(entity_id) is None:
+            return None
+        else:
+            return self._sub_processes[entity_id].collect_last_result()
 
 def transformStatsToPlaybookResult(runner_stats: dict) -> dict:
     hosts = set()
@@ -172,7 +182,19 @@ def transformStatsToPlaybookResult(runner_stats: dict) -> dict:
 
 def process_result(execution_result: dict):
     pprint.pprint(execution_result)
-    
+
+
+process_manager = AnsibleProcessManager()
+
+def run_task(entity_id: str, base_dir: str, playbook_file: str, vault_password_file: str):
+    process_manager.run_task(entity_id, base_dir, playbook_file, vault_password_file)
+
+def get_task_state(entity_id: str) -> AnsibleTaskState:
+    process_manager.get_task_state(entity_id)
+
+def collect_result(entity_id: str) -> AnsiblePlaybookResult:
+    process_manager.collect_result(entity_id)
+
 
 if __name__ == "__main__":
     import time
@@ -181,11 +203,7 @@ if __name__ == "__main__":
     playbook_file = "main.yaml"
     vault_password_file = "vault.txt"
     entity_id = "entity-id"
-    apm = AnsibleProcessManager()
-    apm.run_task(entity_id=entity_id, base_dir=base_dir, playbook_file=playbook_file, vault_password_file=vault_password_file, callback=process_result)
-    time.sleep(1)
-    print("Current task state: " + apm.get_task_state(entity_id=entity_id).name)
-    time.sleep(1)
-    print("Current task state: " + apm.get_task_state(entity_id=entity_id).name)
-    time.sleep(1)
-    print("Current task state: " + apm.get_task_state(entity_id=entity_id).name)
+    process_manager.run_task(entity_id=entity_id, base_dir=base_dir, playbook_file=playbook_file, vault_password_file=vault_password_file)
+    while process_manager.get_task_state(entity_id=entity_id) == AnsibleTaskState.RUNNING:
+        time.sleep(1)
+    pprint.pprint(process_manager.collect_result(entity_id=entity_id))
