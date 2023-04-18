@@ -5,7 +5,7 @@ from .ansible_playbook_runner import async_execute_playbook
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 import voluptuous as vol
-from homeassistant.components.switch import PLATFORM_SCHEMA, SwitchEntity
+from homeassistant.components.button import PLATFORM_SCHEMA, ButtonEntity
 from homeassistant.const import (
     CONF_NAME,
     CONF_HOST,
@@ -74,7 +74,7 @@ async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entit
     playbooks = config.get(CONF_PLAYBOOKS)
 
     # Create a list to store the switch entities
-    switches = []
+    buttons = []
 
     # Loop through the list of playbooks and create a switch entity for each one
     for playbook in playbooks:
@@ -86,7 +86,7 @@ async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entit
         vault_password_file = playbook.get(CONF_VAULT_PASSWORD_FILE)
 
         # Create a switch entity for the playbook
-        switch = AnsiblePlaybookSwitch(
+        switch = AnsiblePlaybookButton(
             hass=hass,
             name=switch_name,
             switch_id=switch_id,
@@ -97,10 +97,10 @@ async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entit
         )
 
         # Add the switch entity to the list of switches
-        switches.append(switch)
+        buttons.append(switch)
 
     # Add the switch entities to Home Assistant
-    async_add_entities(switches)
+    async_add_entities(buttons)
 
     # Return True to indicate that the platform was successfully set up
     return True
@@ -115,7 +115,7 @@ def check_location_exists(hass, path: str):
 def get_absolute_path(hass_config_location: str, path: str) -> str:
     return os.path.join(hass_config_location, DOMAIN, path)
 
-class AnsiblePlaybookSwitch(SwitchEntity):
+class AnsiblePlaybookButton(ButtonEntity):
     def __init__(self, hass, name: str, switch_id: str, private_data_dir: str, playbook_file: str, extra_vars: dict, vault_password_file: str, initial_state=False):
         self._name = name if name is not None else DEFAULT_NAME
         self._private_data_dir = private_data_dir
@@ -129,6 +129,10 @@ class AnsiblePlaybookSwitch(SwitchEntity):
     @property
     def name(self) -> str:
         return self._name
+    
+    @property
+    def device_class(self) -> str:
+        return "update"
 
     @property
     def unique_id(self):
@@ -139,15 +143,11 @@ class AnsiblePlaybookSwitch(SwitchEntity):
         """Return true if the switch is currently turned on."""
         return self._state
 
-    async def async_turn_on(self, **kwargs) -> None:
-        _LOGGER.warn("ansible_playbook switch turned on")
+    async def async_press(self, **kwargs) -> None:
+        _LOGGER.warn("ansible_playbook turned on")
         self._state = True
         self.async_schedule_update_ha_state()
         await self._run_playbook()
-
-    async def async_turn_off(self, **kwargs) -> None:
-        # self._state = False
-        self.async_schedule_update_ha_state()
 
     async def _run_playbook(self) -> None:
         # Run playbook
