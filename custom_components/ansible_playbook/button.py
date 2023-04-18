@@ -147,7 +147,7 @@ class AnsiblePlaybookButton(ButtonEntity):
         _LOGGER.warn("ansible_playbook turned on")
         self._state = True
         self.async_schedule_update_ha_state()
-        self.hass.async_add_job(self._run_playbook)
+        self.hass.async_add_executor_job(self._run_playbook)
 
     async def _run_playbook(self) -> None:
         # Run playbook
