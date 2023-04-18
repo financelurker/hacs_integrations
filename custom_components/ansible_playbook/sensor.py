@@ -1,9 +1,9 @@
 import logging
+from .process_manager import get_task_state, AnsibleTaskState, collect_result
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.sensor import ENTITY_ID_FORMAT, SensorEntity
 import homeassistant.helpers.dispatcher as dispatcher
-from process_manager import get_task_state, AnsibleTaskState, collect_result
 from datetime import timedelta
 
 
@@ -54,21 +54,18 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
         """Handle the custom event and update the entity state."""
         _LOGGER.debug("Received custom event")
         self._should_poll = True
+        self._state = True
         self.async_schedule_update_ha_state()
 
     async def async_update(self):
         task_state = get_task_state(self._button_unique_id)
-        if task_state == AnsibleTaskState.RUNNING:
-            if self._state == False:
-                self._state = True
-                self._should_poll = True
-        elif task_state == AnsibleTaskState.NOT_RUNNING:
+        if task_state == AnsibleTaskState.NOT_RUNNING:
             if self._state == True:
                 result = collect_result(self._button_unique_id)
                 _LOGGER.warn(result)
                 self._state = False
                 self._should_poll = False
-        await self.async_write_ha_state()        
+                await self.async_write_ha_state()
 
 
 class AnsiblePlaybookHostExecutionResultSensorEntity(SensorEntity):

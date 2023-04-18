@@ -4,10 +4,9 @@ import multiprocessing
 import enum
 from multiprocessing.connection import Connection
 from typing import Dict, List
-from ansible_playbook_runner import execute_playbook
 import pprint
 import math
-import pickle
+from .ansible_playbook_runner import execute_playbook
 
 
 class AnsiblePlaybookResult(dict):
