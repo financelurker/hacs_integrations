@@ -1,7 +1,7 @@
 import logging
 import os
 
-from .runner import async_execute_playbook
+from .ansible_playbook_runner import async_execute_playbook
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 import voluptuous as vol
