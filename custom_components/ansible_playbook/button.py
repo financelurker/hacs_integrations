@@ -2,7 +2,6 @@ import logging
 import os
 from datetime import timedelta
 
-from .ansible_playbook_runner import async_execute_playbook
 from .sensor import AnsiblePlaybookSensorEntity
 from .process_manager import run_task
 import homeassistant.helpers.config_validation as cv
@@ -100,14 +99,16 @@ class AnsiblePlaybookButton(ButtonEntity):
     async def _run_playbook(self) -> None:
         _LOGGER.debug("AnsiblePlaybookButton.run_playbook enter")
         try:
+            _LOGGER.debug("AnsiblePlaybookButton.run_playbook attempting to call run_task")
             run_task(
                 entity_id=self._unique_id,
-                private_data_dir=get_absolute_path(self.hass.config.path(), self._private_data_dir),
-                playbook=self._playbook_file,
+                base_dir=get_absolute_path(self.hass.config.path(), self._private_data_dir),
+                playbook_file=self._playbook_file,
                 vault_password_file=self._vault_password_file
             )
-            _LOGGER.debug("Sending custom event")
+            _LOGGER.debug("AnsiblePlaybookButton.run_playbook Sending " + self._button_id + "_executed" + " event")
             dispatcher.async_dispatcher_send(self.hass, self._button_id + "_executed", None)
+            _LOGGER.debug("AnsiblePlaybookButton.run_playbook Sent " + self._button_id + "_executed" + " event")
         except Exception as e:
             _LOGGER.error("Error while executing the ansible playbook", e)
         _LOGGER.debug("AnsiblePlaybookButton.run_playbook exit")
