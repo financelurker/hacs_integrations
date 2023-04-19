@@ -64,6 +64,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 class AnsiblePlaybookButton(ButtonEntity):
     def __init__(self, hass, name: str, button_id: str, private_data_dir: str, playbook_file: str, extra_vars: dict, vault_password_file: str, unique_id: str):
+        _LOGGER.debug("AnsiblePlaybookButton.__init__ enter")
         self._name = name if name is not None else DEFAULT_NAME
         self._private_data_dir = private_data_dir
         self._playbook_file = playbook_file
@@ -73,6 +74,7 @@ class AnsiblePlaybookButton(ButtonEntity):
         self.entity_id = ENTITY_ID_FORMAT.format(self._unique_id)
         self.hass = hass
         self._button_id = button_id
+        _LOGGER.debug("AnsiblePlaybookButton.__init__ exit")
 
     @property
     def name(self) -> str:
@@ -91,13 +93,12 @@ class AnsiblePlaybookButton(ButtonEntity):
         return self._button_id
 
     async def async_press(self, **kwargs) -> None:
-        _LOGGER.warn("ansible_playbook turned on")
+        _LOGGER.debug("AnsiblePlaybookButton.async_press enter")
         await self._run_playbook()
+        _LOGGER.debug("AnsiblePlaybookButton.async_press exit")
 
     async def _run_playbook(self) -> None:
-        # Run playbook
-        _LOGGER.warn("invoking async_execute_playbook")
-
+        _LOGGER.debug("AnsiblePlaybookButton.run_playbook enter")
         try:
             run_task(
                 entity_id=self._unique_id,
@@ -109,6 +110,7 @@ class AnsiblePlaybookButton(ButtonEntity):
             dispatcher.async_dispatcher_send(self.hass, self._button_id + "_executed", None)
         except Exception as e:
             _LOGGER.error("Error while executing the ansible playbook", e)
+        _LOGGER.debug("AnsiblePlaybookButton.run_playbook exit")
 
 
 # Home Assistant will call this method automatically when setting up the platform.
@@ -116,7 +118,7 @@ class AnsiblePlaybookButton(ButtonEntity):
 async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entities, discovery_info=None):
     """Set up the Ansible playbook button platform."""
 
-    _LOGGER.warn("Setting up ansible_playbook integration")
+    _LOGGER.debug("button.async_setup_platform enter")
 
     # Validate the configuration for the platform
     if not config.get(CONF_PLAYBOOKS):
@@ -161,6 +163,7 @@ async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entit
             button_id=button_id
         )
         entities.append(sensor)
+    _LOGGER.debug("button.async_setup_platform exit")
 
 
     # Add the button entities to Home Assistant
@@ -171,10 +174,16 @@ async def async_setup_platform(hass: core.HomeAssistant, config, async_add_entit
 
 
 def check_location_exists(hass, path: str):
+    _LOGGER.debug("button.check_location_exists enter")
     hass_config_location = hass.config.path()
     absolute_path = get_absolute_path(hass_config_location, path)
-    return os.path.exists(absolute_path)
+    os_path_exists = os.path.exists(absolute_path)
+    _LOGGER.debug("button.check_location_exists enter")
+    return os_path_exists
 
 
 def get_absolute_path(hass_config_location: str, path: str) -> str:
-    return os.path.join(hass_config_location, DOMAIN, path)
+    _LOGGER.debug("button.get_absolute_path enter")
+    absolute_path = os.path.join(hass_config_location, DOMAIN, path)
+    _LOGGER.debug("button.get_absolute_path exit")
+    return absolute_path

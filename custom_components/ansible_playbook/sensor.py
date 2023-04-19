@@ -44,28 +44,32 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
 
     async def async_added_to_hass(self):
         """Run when the entity is added to the registry."""
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.async_added_to_hass enter")
         # Register a callback for the custom event
-        dispatcher.async_dispatcher_connect(
-            self.hass, self._button_id + "_executed", self._handle_playbook_executed_event
-        )
+        dispatcher.async_dispatcher_connect(self.hass, self._button_id + "_executed", self._handle_playbook_executed_event)
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.async_added_to_hass exit")
 
     @callback
     def _handle_playbook_executed_event(self, event):
         """Handle the custom event and update the entity state."""
-        _LOGGER.debug("Received custom event")
+        _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event enter")
         self._should_poll = True
         self._state = True
         self.async_schedule_update_ha_state()
+        _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event exit")
 
     async def async_update(self):
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update enter")
         task_state = get_task_state(self._button_unique_id)
         if task_state == AnsibleTaskState.NOT_RUNNING:
+            _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update playbook NOT_RUNNING: turning off sensor")
             if self._state == True:
                 result = collect_result(self._button_unique_id)
-                _LOGGER.warn(result)
+                _LOGGER.debug(result)
                 self._state = False
                 self._should_poll = False
                 await self.async_write_ha_state()
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update exit")
 
 
 class AnsiblePlaybookHostExecutionResultSensorEntity(SensorEntity):
