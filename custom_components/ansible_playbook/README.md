@@ -13,16 +13,14 @@ To use the Ansible Playbook Switch, you'll need to add a new platform to your Ho
 
 ```yaml
 
-switch:
+button:
   - platform: ansible_playbook
     playbooks:
-      - playbook_path: path/to/playbook.yaml
-        inventory_path: path/to/inventory.yaml
-        name: My Ansible Playbook
-        switch_name: ansible_playbook_switch
-        extra_vars: "some extra vars"
-        vault_password_file: path/to/vault.txt
-
+      - directory: dummy
+        playbook_file: main.yml
+        fault_password_file: vault.txt
+        button_name: My Dummy Playbook
+        button_id: dummy
 
 ```
 
