@@ -55,7 +55,7 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
         _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event enter")
         self._should_poll = True
         self._state = True
-        self.async_schedule_update_ha_state()
+        self.async_request_refresh()
         _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event exit")
 
     async def async_update(self):
