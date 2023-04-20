@@ -71,7 +71,7 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
         _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update exit")
 
     def _update_with_state(self, task_state: AnsibleTaskState):
-        _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state enter - the state is " + task_state.name)
+        _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state enter")
         if task_state == AnsibleTaskState.NOT_RUNNING and self._state == True:
             _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state playbook NOT_RUNNING: turning off sensor")
             result = collect_result(self._button_unique_id)
