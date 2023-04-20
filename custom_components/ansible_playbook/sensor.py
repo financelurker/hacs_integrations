@@ -71,15 +71,18 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
         _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update exit")
 
     def _update_with_state(self, task_state: AnsibleTaskState):
-        _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state enter")
-        if task_state == AnsibleTaskState.NOT_RUNNING:
-            _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state playbook NOT_RUNNING: turning off sensor")
-            if self._state == True:
-                result = collect_result(self._button_unique_id)
-                _LOGGER.debug(result)
-                self._state = False
-                self.async_write_ha_state()
-        _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state exit")
+        if task_state == None:
+            _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state enter - the state is None")
+        else:
+            _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state enter - the state is " + task_state.name)
+            if task_state == AnsibleTaskState.NOT_RUNNING:
+                _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state playbook NOT_RUNNING: turning off sensor")
+                if self._state == True:
+                    result = collect_result(self._button_unique_id)
+                    _LOGGER.debug(result)
+                    self._state = False
+                    self.async_write_ha_state()
+            _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state exit")
 
 class AnsiblePlaybookHostExecutionResultSensorEntity(SensorEntity):
     def __init__(self):
