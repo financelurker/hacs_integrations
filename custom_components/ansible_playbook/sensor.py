@@ -54,7 +54,7 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
     def _handle_playbook_executed_event(self, event):
         """Handle the custom event and update the entity state."""
         _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event enter")
-        self.hass.async_add_executor_job(self._run_playbook)
+        self.hass.async_add_executor_job(self.init_playbook_execution_listening)
         _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event exit")
     
     async def init_playbook_execution_listening(self):
