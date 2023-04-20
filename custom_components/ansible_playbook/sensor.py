@@ -25,22 +25,27 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
 
     @property
     def name(self):
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.name: " + self._name)
         return self._name
 
     @property
     def state(self):
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.state: " + str(self._state))
         return self._state
     
     @property
     def unique_id(self):
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.unique_id: " + str(self._unique_id))
         return self._unique_id
     
     @property
     def device(self):
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.device: " + str(self._button_id))
         return self._button_id
     
     @property
     def should_poll(self):
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.should_poll: " + str(self._should_poll))
         return self._should_poll
 
     async def async_added_to_hass(self):
