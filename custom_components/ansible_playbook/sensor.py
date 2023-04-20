@@ -5,6 +5,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.components.sensor import ENTITY_ID_FORMAT, SensorEntity
 import homeassistant.helpers.dispatcher as dispatcher
 from datetime import timedelta
+import asyncio
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,17 +66,22 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
 
     async def async_update(self):
         _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update enter")
-        task_state = get_task_state(self._button_unique_id)
+        future = self.hass.async_add_executor_job(get_task_state, self._button_unique_id)
+        when_done_lambda = lambda task_state: asyncio.run_coroutine_threadsafe(self._update_with_state, task_state)
+        future.add_done_callback(when_done_lambda)
+        _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update exit")
+
+    async def _update_with_state(self, task_state: AnsibleTaskState):
+        _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state enter")
         if task_state == AnsibleTaskState.NOT_RUNNING:
-            _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update playbook NOT_RUNNING: turning off sensor")
+            _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state playbook NOT_RUNNING: turning off sensor")
             if self._state == True:
                 result = collect_result(self._button_unique_id)
                 _LOGGER.debug(result)
                 self._state = False
                 self._should_poll = False
                 await self.async_write_ha_state()
-        _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update exit")
-
+        _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state exit")
 
 class AnsiblePlaybookHostExecutionResultSensorEntity(SensorEntity):
     def __init__(self):
