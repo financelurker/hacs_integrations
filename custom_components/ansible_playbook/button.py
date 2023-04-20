@@ -93,10 +93,10 @@ class AnsiblePlaybookButton(ButtonEntity):
 
     async def async_press(self, **kwargs) -> None:
         _LOGGER.debug("AnsiblePlaybookButton.async_press enter")
-        await self._run_playbook()
+        await self.hass.async_add_executor_job(self._run_playbook)
         _LOGGER.debug("AnsiblePlaybookButton.async_press exit")
 
-    async def _run_playbook(self) -> None:
+    def _run_playbook(self) -> None:
         _LOGGER.debug("AnsiblePlaybookButton.run_playbook enter")
         try:
             _LOGGER.debug("AnsiblePlaybookButton.run_playbook attempting to call run_task")
