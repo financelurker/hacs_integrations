@@ -164,7 +164,7 @@ class AnsibleProcessManager:
             self._sub_processes[entity_id] = task
             task.run()
         else:
-            if self.get_task_state(base_dir=base_dir, playbook_file=playbook_file) == AnsibleTaskState.RUNNING:
+            if self.get_task_state(entity_id=entity_id) == AnsibleTaskState.RUNNING:
                 pass
             else:
                 self._sub_processes[entity_id].run()
