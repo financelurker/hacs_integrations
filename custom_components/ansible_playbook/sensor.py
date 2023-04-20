@@ -66,7 +66,7 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
     async def async_update(self):
         _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update enter")
         future = self.hass.async_add_executor_job(get_task_state, self._button_unique_id)
-        when_done_lambda = lambda task_state: self._update_with_state(task_state)
+        when_done_lambda = lambda task_state: self._update_with_state(task_state.result())
         future.add_done_callback(when_done_lambda)
         _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update exit")
 
