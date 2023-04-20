@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class AnsiblePlaybookSensorEntity(SensorEntity):
-    SCAN_INTERVAL = timedelta(seconds=5)
+    SCAN_INTERVAL = timedelta(seconds=10)
 
     def __init__(self, name: str, button_unique_id: str, button_id: str, unique_id: str):
         self._name = name
@@ -21,7 +21,7 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
         self._unique_id = unique_id
         self.entity_id = ENTITY_ID_FORMAT.format(self._unique_id)
         self._button_id = button_id
-        self._should_poll = False
+        self._should_poll = True
 
     @property
     def name(self):
@@ -59,7 +59,6 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
     async def _handle_playbook_executed_event(self, event):
         """Handle the custom event and update the entity state."""
         _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event enter")
-        self._should_poll = True
         self._state = True
         self.async_write_ha_state()
         _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event exit")
@@ -79,7 +78,6 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
                 result = collect_result(self._button_unique_id)
                 _LOGGER.debug(result)
                 self._state = False
-                self._should_poll = False
                 self.async_write_ha_state()
         _LOGGER.debug("AnsiblePlaybookSensorEntity._update_with_state exit")
 
