@@ -51,19 +51,14 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
         _LOGGER.debug("AnsiblePlaybookSensorEntity.async_added_to_hass exit")
 
     @callback
-    def _handle_playbook_executed_event(self, event):
+    async def _handle_playbook_executed_event(self, event):
         """Handle the custom event and update the entity state."""
         _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event enter")
-        self.hass.async_add_executor_job(self.init_playbook_execution_listening)
-        _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event exit")
-    
-    async def init_playbook_execution_listening(self):
-        _LOGGER.debug("AnsiblePlaybookSensorEntity.init_playbook_execution_listening enter")
         self._should_poll = True
         self._state = True
         await self.async_write_ha_state()
-        _LOGGER.debug("AnsiblePlaybookSensorEntity.init_playbook_execution_listening exit")
-
+        _LOGGER.debug("AnsiblePlaybookSensorEntity._handle_playbook_executed_event exit")
+    
     async def async_update(self):
         _LOGGER.debug("AnsiblePlaybookSensorEntity.async_update enter")
         future = self.hass.async_add_executor_job(get_task_state, self._button_unique_id)
