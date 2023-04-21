@@ -19,7 +19,8 @@ class AnsiblePlaybookSensorEntity(SensorEntity):
         self._state = False
         self._button_unique_id = button_unique_id
         self._unique_id = unique_id
-        self.entity_id = ENTITY_ID_FORMAT.format(self._unique_id)
+        _LOGGER.debug("Newly created AnsiblePlaybookSensorEntity ID: " + f"sensor.{ENTITY_ID_FORMAT.format(self._unique_id).split('.')[1]}")
+        self.entity_id = f"sensor.{ENTITY_ID_FORMAT.format(self._unique_id).split('.')[1]}"
         self._button_id = button_id
         self._should_poll = True
 
